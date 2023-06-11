@@ -1,5 +1,6 @@
 //
 //  SDL2 Doom
+//  Julorapido 2023
 //
 
 #include <stdio.h>
@@ -16,8 +17,8 @@ typedef struct vi_s { int x, y; } vi;
 typedef struct v2_s { f32 x, y; } v2;
 typedef uint16_t u16;
 
-const int width = 700;
-const int height = 700;
+const int width = 512;
+const int height = 512;
 const int map_rw = 8;
 const int map[64] = {
     1,1,1,1,1,1,1,1,
@@ -87,6 +88,28 @@ void renderMap(SDL_Renderer* rendr){
 void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
     SDL_SetRenderDrawColor(state.renderer, 40, 0, 255, 255);
     SDL_RenderDrawLine(rendr, rect.x, rect.y,  (state.camera.delta_pos.x *  rect.x)- 10, (state.camera.delta_pos.y * rect.y)- 10);
+    // raycast
+    int r, mx, my, mp, dof;
+    float rx, ry, ra, x_offst, y_offst;
+    ra = state.camera.angle;
+    for (int r = 0; r < 1; r ++){
+        //Horizontal - lines
+        dof = 0;
+        float inv_Tan = -1/tan(ra); // look down
+        // RX AND RY   => NEAREST DRAWED LINE POSITION <=
+        if(ra > PI){ ry= ((( (int)state.camera.pos.y>>6)<<6)-0.0001);// looking downward // SHIFT 6 * 6 VALUES BECAUSE UNIT IS 64 (512 x 512 sdl window) !!!
+            rx = (state.camera.pos.y - ry) * inv_Tan + state.camera.pos.x;
+            y_offst = -(height / map_rw); x_offst = -y_offst*inv_Tan;// 512 / 8 = 64
+        }
+        if(ra <  PI){ ry= (( (int)state.camera.pos.y>>6)<<6) + 64;// looking upward
+            rx = (state.camera.pos.y - ry) * inv_Tan + state.camera.pos.x;
+            y_offst = height / map_rw; x_offst = -y_offst*inv_Tan; // 512 / 8 = 64
+        }
+        if (ra == 0 || ra == PI || ra == 3.1415926545){rx = state.camera.pos.x; ry = state.camera.pos.y; dof = 8;} // lookgin straight left or right
+       // while (dof < 8) {
+            //
+      //  }
+    }
 }
 int main(int argc, const char * argv[]) {
 
@@ -152,18 +175,16 @@ int main(int argc, const char * argv[]) {
                         switch( e.key.keysym.sym ){
                                case SDLK_LEFT:
                                    //printf("left \n");
-                                   //p_rect.x -= 2;
-                                    // rotate cam
+                                   // rotate
                                    state.camera.angle += 0.1;
-                                   if(state.camera.angle < 0){state.camera.angle += 2* PI;}
+                                   if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
-                                
+                                   printf("%f \n ", state.camera.angle);
                                    break;
                                case SDLK_RIGHT:
                                   // printf("right \n");
-                                   //p_rect.x += 2;
-                                   state.camera.angle += 0.1;
-                                   if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
+                                   state.camera.angle -= 0.1;
+                                   if(state.camera.angle < 0){state.camera.angle += 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    break;
                                case SDLK_UP:
