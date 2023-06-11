@@ -6,20 +6,51 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
+#define PI 3.1415926545
 
-const int width = 1024;
-const int height = 728;
+typedef uint32_t u32;
+typedef float    f32;
+
+typedef struct vi_s { int x, y; } vi;
+typedef struct v2_s { f32 x, y; } v2;
+typedef uint16_t u16;
+
+const int width = 700;
+const int height = 700;
 const int map_rw = 8;
 const int map[64] = {
     1,1,1,1,1,1,1,1,
     0,0,0,0,0,0,0,1,
     0,0,0,0,0,0,0,1,
     0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,
-    1,0,0,0,0,1,0,1,
+    1,0,1,0,0,0,0,1,
+    1,0,1,0,0,1,0,1,
     1,0,0,0,0,0,0,1,
     1,1,1,1,1,1,1,1,
 };
+
+static struct {
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    SDL_Texture *texture, *debug;
+    u32 *pixels;
+    bool quit;
+
+    //struct { struct sector arr[32]; usize n; } sectors;
+    //struct { struct wall arr[128]; usize n; } walls;
+    //u16 y_lo[SCREEN_WIDTH], y_hi[SCREEN_WIDTH];
+
+    struct {
+        //v2 pos;  RECT POS IS INT (NOT FLOAT)
+        vi pos;
+        v2 delta_pos;
+        f32 angle, anglecos, anglesin;
+        int sector;
+    } camera;
+
+    bool sleepy;
+} state;
 
 void renderMap(SDL_Renderer* rendr){
     int map_i = 0;
@@ -50,7 +81,12 @@ void renderMap(SDL_Renderer* rendr){
             map_i++;
         }
     }
-    SDL_SetRenderDrawColor(rendr, 0, 130, 0, 255);
+    SDL_SetRenderDrawColor(rendr, 100, 100, 100, 255);
+}
+
+void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
+    SDL_SetRenderDrawColor(state.renderer, 40, 0, 255, 255);
+    SDL_RenderDrawLine(rendr, rect.x, rect.y,  (state.camera.delta_pos.x *  rect.x)- 10, (state.camera.delta_pos.y * rect.y)- 10);
 }
 int main(int argc, const char * argv[]) {
 
@@ -65,10 +101,10 @@ int main(int argc, const char * argv[]) {
         printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     }else{
         //SDL_Init(SDL_INIT_VIDEO);
-        window = SDL_CreateWindow("Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
-        SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        state.window = SDL_CreateWindow("Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
+        state.renderer = SDL_CreateRenderer(state.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
-        if( window == NULL ){printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );}else{
+        if( state.window == NULL ){printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );}else{
             
             //Get window surface
             //screenSurface = SDL_GetWindowSurface( window );
@@ -77,27 +113,36 @@ int main(int argc, const char * argv[]) {
 
             SDL_Rect p_rect;
             p_rect.x = 250;p_rect.y = 150;
-            p_rect.w = 50;p_rect.h = 50;
-            SDL_SetRenderDrawColor(renderer, 0, 130, 0, 255);
+            p_rect.w = 10;p_rect.h = 10;
             
+            // BG Clr
+            SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
+
             SDL_Event e; bool quit = false;
             bool drwd = false;
             while(!quit){
                 /// Clear Screen
-                SDL_RenderClear(renderer);
+                SDL_RenderClear(state.renderer);
             
-                // Modify Color & Draw Player Rectangle
-                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-                SDL_RenderDrawRect(renderer, &p_rect);
-                SDL_RenderFillRect(renderer, &p_rect);
-                // Green clr
-                SDL_SetRenderDrawColor(renderer, 20, 180, 0, 255);
-     
+                state.camera.pos.x =  p_rect.x;
+                state.camera.pos.y =  p_rect.y;
+                
                 // DRAW MAP
-                renderMap(renderer);
+                renderMap(state.renderer);
+
+                // draw plyr
+                renderPlayr(state.renderer, p_rect);
+                
+                // Modify Color & Draw Player Rectangle & line
+                SDL_SetRenderDrawColor(state.renderer, 0, 0, 255, 255);
+                SDL_RenderDrawRect(state.renderer, &p_rect);
+                SDL_RenderFillRect(state.renderer, &p_rect);
+                
+                // BG clr
+                SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
                 
                 // Show whats drawn
-                SDL_RenderPresent(renderer);
+                SDL_RenderPresent(state.renderer);
                 
                 // key movs <= =>
                 while(SDL_PollEvent(&e) ){
@@ -107,19 +152,31 @@ int main(int argc, const char * argv[]) {
                         switch( e.key.keysym.sym ){
                                case SDLK_LEFT:
                                    //printf("left \n");
-                                   p_rect.x -= 14;
+                                   //p_rect.x -= 2;
+                                    // rotate cam
+                                   state.camera.angle += 0.1;
+                                   if(state.camera.angle < 0){state.camera.angle += 2* PI;}
+                                   state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
+                                
                                    break;
                                case SDLK_RIGHT:
                                   // printf("right \n");
-                                   p_rect.x += 14;
+                                   //p_rect.x += 2;
+                                   state.camera.angle += 0.1;
+                                   if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
+                                   state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    break;
                                case SDLK_UP:
                                  //  printf("up \n");
-                                   p_rect.y -= 14;
+                                   //p_rect.y -= 2;
+                                    p_rect.x += state.camera.delta_pos.x;
+                                    p_rect.y += state.camera.delta_pos.y;
                                    break;
                                case SDLK_DOWN:
                                  //  printf("down \n");
-                                   p_rect.y += 14;
+                                   //p_rect.y += 2;
+                                    p_rect.x -= state.camera.delta_pos.x;
+                                    p_rect.y -= state.camera.delta_pos.y;
                                    break;
                                default:
                                    break;
@@ -132,7 +189,7 @@ int main(int argc, const char * argv[]) {
             
         }
         SDL_Delay(2000);
-        SDL_DestroyWindow(window);
+        SDL_DestroyWindow(state.window);
         SDL_Quit();
     }
 
