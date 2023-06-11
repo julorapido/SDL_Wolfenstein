@@ -17,6 +17,7 @@ typedef struct vi_s { int x, y; } vi;
 typedef struct v2_s { f32 x, y; } v2;
 typedef uint16_t u16;
 
+
 const int width = 512;
 const int height = 512;
 const int map_rw = 8;
@@ -106,9 +107,17 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
             y_offst = height / map_rw; x_offst = -y_offst*inv_Tan; // 512 / 8 = 64
         }
         if (ra == 0 || ra == PI || ra == 3.1415926545){rx = state.camera.pos.x; ry = state.camera.pos.y; dof = 8;} // lookgin straight left or right
-       // while (dof < 8) {
-            //
-      //  }
+        while (dof < 8) {
+            mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
+            if (mp < 64 && map[mp] == 1){dof = 8;}// hit wall
+            else{// offset + 1
+                rx += x_offst; ry += y_offst;
+                dof++;
+            }
+        }
+        SDL_SetRenderDrawColor(state.renderer, 230, 230, 230, 255);
+        SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
+
     }
 }
 int main(int argc, const char * argv[]) {
