@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <math.h>
 #define PI 3.1415926545
+#define P2 PI/2
+#define P3 3*PI/2
 
 typedef uint32_t u32;
 typedef float    f32;
@@ -88,7 +90,7 @@ void renderMap(SDL_Renderer* rendr){
 
 void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
     SDL_SetRenderDrawColor(state.renderer, 40, 0, 255, 255);
-    SDL_RenderDrawLine(rendr, rect.x, rect.y,  (state.camera.delta_pos.x *  rect.x)- 10, (state.camera.delta_pos.y * rect.y)- 10);
+    //SDL_RenderDrawLine(rendr, rect.x, rect.y,  (state.camera.delta_pos.x *  rect.x), (state.camera.delta_pos.y * rect.y));
     // raycast
     int r, mx, my, mp, dof;
     float rx, ry, ra, x_offst, y_offst;
@@ -109,13 +111,39 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         if (ra == 0 || ra == PI || ra == 3.1415926545){rx = state.camera.pos.x; ry = state.camera.pos.y; dof = 8;} // lookgin straight left or right
         while (dof < 8) {
             mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
-            if (mp < 64 && map[mp] == 1){dof = 8;}// hit wall
+            if (mp > 0 && mp < 64 && map[mp] == 1){dof = 8;}// hit wall
             else{// offset + 1
                 rx += x_offst; ry += y_offst;
                 dof++;
             }
         }
-        SDL_SetRenderDrawColor(state.renderer, 230, 230, 230, 255);
+        SDL_SetRenderDrawColor(state.renderer, 0, 255, 0, 255);
+        SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
+ 
+        
+        //Vertical - lines
+        dof = 0;
+        float d_Tan = -tan(ra);
+        if(ra>P2&&ra<P3){// looking left
+            rx = ((( (int)state.camera.pos.x>>6)<<6)-0.0001);
+            ry = (state.camera.pos.x - rx) * d_Tan + state.camera.pos.y;
+            x_offst = -(height / map_rw); y_offst = -x_offst*d_Tan;
+        }
+        if(ra<P2||ra>P3){// looking right
+            rx = (( (int)state.camera.pos.x>>6)<<6) + 64;
+            ry = (state.camera.pos.x - rx) * d_Tan + state.camera.pos.y;
+            x_offst = height / map_rw; y_offst = -x_offst*d_Tan;
+        }
+        if (ra == 0 || ra == PI ){rx = state.camera.pos.x; ry = state.camera.pos.y; dof = 8;}
+        while (dof < 8) {
+            mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
+            if (mp > 0 && mp < 64 && map[mp] == 1){dof = 8;}// hit wall
+            else{// offset + 1
+                rx += x_offst; ry += y_offst;
+                dof++;
+            }
+        }
+        SDL_SetRenderDrawColor(state.renderer, 255, 0, 0, 255);
         SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
 
     }
