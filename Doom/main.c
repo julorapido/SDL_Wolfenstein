@@ -26,7 +26,7 @@ const int map_rw = 8;
 const int map[64] = {
     1,1,1,1,1,1,1,1,
     0,0,0,0,0,0,0,1,
-    0,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,1,1,
     0,0,0,0,0,0,0,1,
     1,0,1,0,0,0,0,1,
     1,0,1,0,0,1,0,1,
@@ -76,7 +76,7 @@ void renderMap(SDL_Renderer* rendr){
             
             //square conditionnal fill color
             //printf("%d", map_i);
-            if(map[map_i] == 0){SDL_SetRenderDrawColor(rendr, 240, 240, 240, 255);}else{
+            if(map[(8 * y )+ x] == 0){SDL_SetRenderDrawColor(rendr, 240, 240, 240, 255);}else{
                 SDL_SetRenderDrawColor(rendr, 0, 0, 0, 255);
             }
             SDL_RenderFillRect(rendr, &map_rect);
