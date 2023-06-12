@@ -101,14 +101,14 @@ void render3D(SDL_Renderer* doomRenderer){
 }
 void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
     SDL_SetRenderDrawColor(state.renderer, 40, 0, 255, 255);
-    SDL_SetRenderDrawColor(state.doom_window, 60, 60, 60, 255);
+    SDL_SetRenderDrawColor(state.doom_renderer, 60, 60, 60, 255);
 
     //SDL_RenderDrawLine(rendr, rect.x, rect.y,  (state.camera.delta_pos.x *  rect.x), (state.camera.delta_pos.y * rect.y));
     // raycast
     int r, mx, my, mp, dof;
     float rx, ry, ra, x_offst, y_offst, disT;
     ra = state.camera.angle - DR * 30; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
-    for (int r = 0; r < 60; r ++){
+    for (r = 0; r < 60; r ++){
         
         //Horizontal - lines
         dof = 0;
@@ -171,16 +171,20 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         if (v_rayLen < h_rayLen){rx = v_ray_x; ry =  v_ray_y; disT = v_rayLen;}
         if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;}
         SDL_SetRenderDrawColor(state.renderer, 255, 30, 100, 255);
-        SDL_SetRenderDrawColor(state.doom_renderer, 255, 30, 100, 255);
+        SDL_SetRenderDrawColor(state.doom_renderer, 230, 30, 100, 255);
 
         SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
         // 3D Walls
-        float lineH = (1 * height) / disT;     /// LINE HEIGHT
-        if(lineH > height){lineH = height;}
-        float lineOffst = height - ( lineH / 2); ////   LINE OFFSET
-        printf("%f \n", lineH);
-        // 8 by 8
-        SDL_RenderDrawLine(state.doom_renderer, rx, 0, rx, lineH);
+        float lineH = (map_rw * 3 * height) / disT;     /// LINE HEIGHT
+        if(lineH > height - 20){lineH = height - 20;}
+        float lineOffst = (height / 3) - ( lineH / 2); ////   LINE OFFSET
+        int splitted = width / 60 + 1;
+        
+        for (int p = 0; p < splitted + 1 ; p ++){
+            // 9 by 9 approx
+            SDL_RenderDrawLine(state.doom_renderer, r + p + (9* r), lineOffst, r + p + (9* r), lineH * 2 + lineOffst);
+        }
+        
         ra += DR; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
     }
 }
@@ -200,7 +204,7 @@ int main(int argc, const char * argv[]) {
         state.window = SDL_CreateWindow("Doom Map", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
         state.renderer = SDL_CreateRenderer(state.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
-        state.doom_window = SDL_CreateWindow("Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
+        state.doom_window = SDL_CreateWindow("Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,  width, height , SDL_WINDOW_SHOWN);
         state.doom_renderer = SDL_CreateRenderer(state.doom_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
         if( state.window == NULL || state.doom_window == NULL ){printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );}else{
@@ -211,7 +215,7 @@ int main(int argc, const char * argv[]) {
             //SDL_UpdateWindowSurface(window);
 
             SDL_Rect p_rect;
-            p_rect.x = 250;p_rect.y = 150;
+            p_rect.x = width / 2;p_rect.y = width / 2;
             p_rect.w = 10;p_rect.h = 10;
             
             // BG Clr
@@ -241,7 +245,8 @@ int main(int argc, const char * argv[]) {
                 
                 // BG clr
                 SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
-                
+                SDL_SetRenderDrawColor(state.doom_renderer, 60, 60, 60, 255);
+
                 // Show whats drawn
                 SDL_RenderPresent(state.renderer);
                 SDL_RenderPresent(state.doom_renderer);
