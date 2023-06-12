@@ -25,12 +25,12 @@ const int height = 512;
 const int map_rw = 8;
 const int map[64] = {
     1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,1,1,
-    0,0,0,0,0,0,0,1,
+    1,1,1,1,0,0,0,1,
     1,0,1,0,0,0,0,1,
-    1,0,1,0,0,1,0,1,
     1,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,0,0,0,1,0,1,
+    1,1,0,0,0,0,1,1,
     1,1,1,1,1,1,1,1,
 };
 
@@ -93,7 +93,10 @@ void renderMap(SDL_Renderer* rendr){
 }
 
 float raydist(float r_x , float r_y, float ang){
-    return (sqrt( (r_x - state.camera.pos.x ) * (r_x - state.camera.pos.x ) + (r_y - state.camera.pos.x ) * (r_y - state.camera.pos.y ) ));
+    double abs_wth = fabsf(r_x - state.camera.pos.x );
+    double abs_hgth = fabsf(r_y - state.camera.pos.y );
+    
+    return (sqrt( (abs_wth) * (abs_wth) + (abs_hgth) * (abs_hgth ) ));
 }
 
 void render3D(SDL_Renderer* doomRenderer){
@@ -112,7 +115,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
          
         //Horizontal - lines
         dof = 0;
-        float h_rayLen = 100000;
+        float h_rayLen = 10000000;
         float h_ray_x = state.camera.pos.x; float h_ray_y = state.camera.pos.y;
         float inv_Tan = -1/tan(ra); // look down
         // RX AND RY   => NEAREST DRAWED LINE POSITION <=
@@ -139,7 +142,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         //Vertical - lines
         dof = 0;
-        float v_rayLen = 100000;
+        float v_rayLen = 1000000;
         float v_ray_x = state.camera.pos.x; float v_ray_y = state.camera.pos.y;
         float d_Tan = -tan(ra);
         if(ra>P2&&ra<P3){// looking left
@@ -168,24 +171,26 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         
         // SHADERS
+        if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;
+            SDL_SetRenderDrawColor(state.doom_renderer, 200, 30, 100, 255);
+            
+        }
+        
         if (v_rayLen < h_rayLen){rx = v_ray_x; ry =  v_ray_y; disT = v_rayLen;
             SDL_SetRenderDrawColor(state.doom_renderer, 230, 30, 100, 255);
+            SDL_SetRenderDrawColor(state.renderer, 255, 30, 100, 255);
         }
-        if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;
-            SDL_SetRenderDrawColor(state.doom_renderer, 210, 30, 100, 255);
-        }
-        SDL_SetRenderDrawColor(state.renderer, 255, 30, 100, 255);
-
+        
         SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
         // 3D Walls
         
         // FIX FISHEYE
         float ca = state.camera.angle - ra;  if(ca < 0){ca += 2 * PI;} if (ca > 2*PI ){ca -= 2*PI;}
-        disT = disT * cosf(ca);
+        //disT = disT * cosf(ca);
     
         float lineH = (map_rw * 3 * height) / disT;     /// LINE HEIGHT
         if(lineH > height - 20){lineH = height - 20;}
-        float lineOffst = (height / 3) - ( lineH / 2); ////   LINE OFFSET
+        float lineOffst = (height / 2.5) - ( lineH / 2); ////   LINE OFFSET
         int splitted = width / 60 + 1;
         
         for (int p = 0; p < splitted + 1 ; p ++){
@@ -193,7 +198,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
             SDL_RenderDrawLine(state.doom_renderer, r + p + (9* r), lineOffst, r + p + (9* r), lineH * 2 + lineOffst);
         }
         
-        ra += DR; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
+        ra +=  DR; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
     }
 }
 int main(int argc, const char * argv[]) {
@@ -268,14 +273,14 @@ int main(int argc, const char * argv[]) {
                                case SDLK_LEFT:
                                    //printf("left \n");
                                    // rotate
-                                   state.camera.angle += 0.15;
+                                   state.camera.angle += 0.2;
                                    if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    printf("%f \n ", state.camera.angle);
                                    break;
                                case SDLK_RIGHT:
                                   // printf("right \n");
-                                   state.camera.angle -= 0.15;
+                                   state.camera.angle -= 0.2;
                                    if(state.camera.angle < 0){state.camera.angle += 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    break;
