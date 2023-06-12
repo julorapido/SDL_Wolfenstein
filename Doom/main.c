@@ -109,7 +109,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
     float rx, ry, ra, x_offst, y_offst, disT;
     ra = state.camera.angle - DR * 30; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
     for (r = 0; r < 60; r ++){
-        
+         
         //Horizontal - lines
         dof = 0;
         float h_rayLen = 100000;
@@ -167,14 +167,22 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         }
         
         
-        
-        if (v_rayLen < h_rayLen){rx = v_ray_x; ry =  v_ray_y; disT = v_rayLen;}
-        if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;}
+        // SHADERS
+        if (v_rayLen < h_rayLen){rx = v_ray_x; ry =  v_ray_y; disT = v_rayLen;
+            SDL_SetRenderDrawColor(state.doom_renderer, 230, 30, 100, 255);
+        }
+        if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;
+            SDL_SetRenderDrawColor(state.doom_renderer, 210, 30, 100, 255);
+        }
         SDL_SetRenderDrawColor(state.renderer, 255, 30, 100, 255);
-        SDL_SetRenderDrawColor(state.doom_renderer, 230, 30, 100, 255);
 
         SDL_RenderDrawLine(rendr, rect.x, rect.y, rx, ry);
         // 3D Walls
+        
+        // FIX FISHEYE
+        float ca = state.camera.angle - ra;  if(ca < 0){ca += 2 * PI;} if (ca > 2*PI ){ca -= 2*PI;}
+        disT = disT * cosf(ca);
+    
         float lineH = (map_rw * 3 * height) / disT;     /// LINE HEIGHT
         if(lineH > height - 20){lineH = height - 20;}
         float lineOffst = (height / 3) - ( lineH / 2); ////   LINE OFFSET
@@ -204,7 +212,7 @@ int main(int argc, const char * argv[]) {
         state.window = SDL_CreateWindow("Doom Map", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
         state.renderer = SDL_CreateRenderer(state.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
-        state.doom_window = SDL_CreateWindow("Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,  width, height , SDL_WINDOW_SHOWN);
+        state.doom_window = SDL_CreateWindow("SDL_Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,  width, height , SDL_WINDOW_SHOWN);
         state.doom_renderer = SDL_CreateRenderer(state.doom_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
         if( state.window == NULL || state.doom_window == NULL ){printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );}else{
@@ -260,14 +268,14 @@ int main(int argc, const char * argv[]) {
                                case SDLK_LEFT:
                                    //printf("left \n");
                                    // rotate
-                                   state.camera.angle += 0.1;
+                                   state.camera.angle += 0.15;
                                    if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    printf("%f \n ", state.camera.angle);
                                    break;
                                case SDLK_RIGHT:
                                   // printf("right \n");
-                                   state.camera.angle -= 0.1;
+                                   state.camera.angle -= 0.15;
                                    if(state.camera.angle < 0){state.camera.angle += 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    break;
