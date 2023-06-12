@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#define TPI 3.1415926545 * 2
 #define PI 3.1415926545
 #define P2 PI/2
 #define P3 3*PI/2
@@ -25,9 +26,9 @@ const int height = 512;
 const int map_rw = 8;
 const int map[64] = {
     1,1,1,1,1,1,1,1,
-    1,0,0,1,0,0,0,1,
-    1,0,1,0,0,0,1,1,
-    1,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,1,1,
+    1,0,1,0,0,0,0,1,
+    1,1,0,0,1,0,0,1,
     1,0,0,0,0,0,0,1,
     1,0,0,0,0,1,0,1,
     1,1,0,0,0,0,1,1,
@@ -99,9 +100,18 @@ float raydist(float r_x , float r_y, float ang){
     return (sqrt( (abs_wth) * (abs_wth) + (abs_hgth) * (abs_hgth ) ));
 }
 
-void render3D(SDL_Renderer* doomRenderer){
+//void plyr_line_equation(SDL_Rect rect, SDL_Rect collision_rect){
+    // float yA = (state.camera.delta_pos.y * rect.y); float xA = (state.camera.delta_pos.x * rect.x);
+   // float yB = state.camera.pos.y;   float xB = state.camera.pos.x;
+   // float coef = (yA - yB) / (xB - xA);
+    // ya = coef * xA + b
+    // b = ya - coef * xA
+   // float p  = yA - (coef * xA);
+    // y = coef(x) + p;
+    // x = coef+ p / y;
+   // collision_rect.x = 2*coef + p / yA;
     
-}
+//}
 void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
     SDL_SetRenderDrawColor(state.renderer, 40, 0, 255, 255);
     SDL_SetRenderDrawColor(state.doom_renderer, 60, 60, 60, 255);
@@ -186,7 +196,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         // FIX FISHEYE
         float ca = state.camera.angle - ra;  if(ca < 0){ca += 2 * PI;} if (ca > 2*PI ){ca -= 2*PI;}
-        //disT = disT * cosf(ca);
+         disT = disT * cosf(ca);
     
         float lineH = (map_rw * 3 * height) / disT;     /// LINE HEIGHT
         if(lineH > height - 20){lineH = height - 20;}
@@ -214,10 +224,10 @@ int main(int argc, const char * argv[]) {
         printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     }else{
         //SDL_Init(SDL_INIT_VIDEO);
-        state.window = SDL_CreateWindow("Doom Map", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
+        state.window = SDL_CreateWindow("Doom Map", SDL_WINDOWPOS_CENTERED - 200 , SDL_WINDOWPOS_CENTERED ,width, height, SDL_WINDOW_SHOWN);
         state.renderer = SDL_CreateRenderer(state.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
-        state.doom_window = SDL_CreateWindow("SDL_Doom", SDL_WINDOWPOS_CENTERED , SDL_WINDOWPOS_CENTERED ,  width, height , SDL_WINDOW_SHOWN);
+        state.doom_window = SDL_CreateWindow("SDL_Doom", SDL_WINDOWPOS_CENTERED + 200 , SDL_WINDOWPOS_CENTERED ,  width, height , SDL_WINDOW_SHOWN);
         state.doom_renderer = SDL_CreateRenderer(state.doom_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
         
         if( state.window == NULL || state.doom_window == NULL ){printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );}else{
@@ -231,6 +241,8 @@ int main(int argc, const char * argv[]) {
             p_rect.x = width / 2;p_rect.y = width / 2;
             p_rect.w = 10;p_rect.h = 10;
             
+            
+            
             // BG Clr
             SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
             SDL_SetRenderDrawColor(state.doom_renderer, 70, 70, 70, 255);
@@ -239,12 +251,11 @@ int main(int argc, const char * argv[]) {
             bool drwd = false;
             while(!quit){
                 /// Clear Screen
-                SDL_RenderClear(state.renderer);
-                SDL_RenderClear(state.doom_renderer);
+                SDL_RenderClear(state.renderer); SDL_RenderClear(state.doom_renderer);
 
-                state.camera.pos.x =  p_rect.x;
-                state.camera.pos.y =  p_rect.y;
+                state.camera.pos.x =  p_rect.x; state.camera.pos.y =  p_rect.y;
                 
+
                 // DRAW MAP
                 renderMap(state.renderer);
 
@@ -253,8 +264,8 @@ int main(int argc, const char * argv[]) {
                 
                 // Modify Color & Draw Player Rectangle & line
                 SDL_SetRenderDrawColor(state.renderer, 0, 0, 255, 255);
-                SDL_RenderDrawRect(state.renderer, &p_rect);
-                SDL_RenderFillRect(state.renderer, &p_rect);
+                SDL_RenderDrawRect(state.renderer, &p_rect); SDL_RenderFillRect(state.renderer, &p_rect);
+                
                 
                 // BG clr
                 SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
@@ -264,7 +275,20 @@ int main(int argc, const char * argv[]) {
                 SDL_RenderPresent(state.renderer);
                 SDL_RenderPresent(state.doom_renderer);
 
+                int x_fset = 12; if(state.camera.angle < P3 && state.camera.angle > P2){x_fset = -12;}
+                int y_fset = 12; if(state.camera.angle > PI && state.camera.angle < TPI){y_fset = -12;}
+                
+                int grid_x = state.camera.pos.x / 64;
+                int grid_x_offset =  (state.camera.pos.x + x_fset) / 64;
+                int inv_x_offset =  (state.camera.pos.x - x_fset) / 64;
+
+                int grid_y = state.camera.pos.y / 64;
+                int grid_y_offset =  (state.camera.pos.y + y_fset) / 64;
+                int inv_y_offset =  (state.camera.pos.y - y_fset) / 64;
+
+                
                 // key movs <= =>
+                bool collision = false;
                 while(SDL_PollEvent(&e) ){
                     if(e.type == SDL_QUIT) {quit = true;}
                     if (e.type == SDL_KEYDOWN){
@@ -273,28 +297,37 @@ int main(int argc, const char * argv[]) {
                                case SDLK_LEFT:
                                    //printf("left \n");
                                    // rotate
-                                   state.camera.angle += 0.2;
+                                   state.camera.angle += 0.15;
                                    if(state.camera.angle > 2 * PI){state.camera.angle -= 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
-                                   printf("%f \n ", state.camera.angle);
                                    break;
                                case SDLK_RIGHT:
-                                  // printf("right \n");
-                                   state.camera.angle -= 0.2;
+                                   state.camera.angle -= 0.15;
                                    if(state.camera.angle < 0){state.camera.angle += 2* PI;}
                                    state.camera.delta_pos.x = cos(state.camera.angle) * 5; state.camera.delta_pos.y = sin(state.camera.angle) * 5;
                                    break;
                                case SDLK_UP:
                                  //  printf("up \n");
                                    //p_rect.y -= 2;
-                                    p_rect.x += state.camera.delta_pos.x;
-                                    p_rect.y += state.camera.delta_pos.y;
+                                    if(map[(8 * grid_y_offset ) + grid_x]  || map[(8 * grid_y ) + grid_x_offset] ||
+                                       map[(8 * grid_y_offset ) + grid_x_offset]  ){
+                                        puts("forward collision");
+                                    }else{
+                                        p_rect.x += state.camera.delta_pos.x;
+                                        p_rect.y += state.camera.delta_pos.y;
+                                    }
                                    break;
                                case SDLK_DOWN:
                                  //  printf("down \n");
                                    //p_rect.y += 2;
-                                    p_rect.x -= state.camera.delta_pos.x;
-                                    p_rect.y -= state.camera.delta_pos.y;
+                                    if(map[(8 * inv_y_offset ) + grid_x]  || map[(8 * grid_y ) + inv_x_offset] ||
+                                       map[(8 * inv_y_offset ) + inv_x_offset]  ){
+                                        puts("backward collision");
+                                    }else{
+                                        p_rect.x -= state.camera.delta_pos.x;
+                                        p_rect.y -= state.camera.delta_pos.y;
+                                    }
+                       
                                    break;
                                default:
                                    break;
