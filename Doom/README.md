@@ -1,2 +1,10 @@
 # SDL_Doom
-My FPS Shooter made with No Game Engine in C.
+
+## Installation
+
+Install SDL2 with brew
+
+```bash
+  brew install sdl2
+```
+    
