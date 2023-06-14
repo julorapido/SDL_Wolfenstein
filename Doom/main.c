@@ -401,7 +401,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         SDL_Rect line_rect; line_rect.w = 10; line_rect.h = 1; line_rect.x = r + (9 * r);
         for(y = main_h_wall ? lineOffst-lineH*2 :  lineOffst; y <  lineH*2+lineOffst; y ++){
              line_rect.y = y;
-             int clr = All_Textures[(int) (text_y + 64)];
+             int clr = All_Textures[(int) (text_y )];
              SDL_SetRenderDrawColor(state.doom_renderer, clr * 200, 30, 100, 255);
              SDL_RenderDrawRect(state.doom_renderer, &line_rect); SDL_RenderFillRect(state.doom_renderer, &line_rect);
             text_y += tex_step;
