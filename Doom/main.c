@@ -28,14 +28,14 @@ const int map_rw = 8;
 // 2 for big textured wall
 // 3 for door wall
 const int map[64] = {
-    1,1,1,1,1,1,1,1,
-    1,1,0,0,0,0,2,1,
-    1,0,1,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,
-    1,0,1,0, 0,0,0,1,
-    1,0,0,1,0,1,0,1,
-    1,0,0,0,0,0,1,1,
-    1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,
+    2,1,0,0,0,0,2,2,
+    2,0,1,0,0,0,0,2,
+    2,0,0,0,0,0,0,2,
+    2,0,1,0,0,0,0,2,
+    1,0,0,1,0,1,0,2,
+    2,0,0,0,0,0,1,2,
+    1,1,1,2,2,2,2,2,
 };
 int All_Textures[]= //all 32x32 textures
 {
@@ -43,8 +43,8 @@ int All_Textures[]= //all 32x32 textures
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,1,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,1,1,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
@@ -308,7 +308,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         while (dof < 8) {
             mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
             if (mp > 0 && mp < 64 && (map[mp] > 0) ){dof = 8;// hit wall
-                if( map[mp] == 2){big_H_Wl = true;}
+               // if( map[mp] == 2){big_H_Wl = true;}
                 h_ray_x = rx; h_ray_y = ry; h_rayLen = raydist(rx, ry, ra);
             }
             else{
@@ -339,7 +339,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
             mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
             
             if (mp > 0 && mp < 64 && (map[mp] > 0) ){dof = 8;// hit wall
-                if( map[mp] == 2){big_V_Wl = true;}
+               // if( map[mp] == 2){big_V_Wl = true;}
                 v_ray_x = rx; v_ray_y = ry; v_rayLen = raydist(rx, ry, ra);
             }
             
@@ -405,14 +405,21 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         int y; float text_y = text_yOff * tex_step  ;// float tex_step = 32.0 / (float) wallHght;
         int text_x = is_vert ?  (int) ((ry - 64 *  (int)(ry / 64)) / 2) : (int) ((rx - 64 *  (int)(rx / 64)) / 2);
+        if(ra > 180){text_x = 31 - text_x;}// flip textures
+        //int text_skin = 0;
+        //if(map[mp]){text_skin = map[mp] >= 0 && map[mp] <= 4 ? map[mp] : 0;}
+        
         SDL_Rect line_rect; line_rect.w = 10; line_rect.h = 1; line_rect.x = r + (9 * r);
         for(y = main_h_wall ? lineOffst-lineH*2 :  lineOffst; y <  lineH*2+lineOffst; y ++){
              line_rect.y = y;
-             int clr = All_Textures[(int) (text_y) * 32  + (text_x)];
-             SDL_SetRenderDrawColor(state.doom_renderer, 40, 30,  (clr == 1 ? 200 :  120) + (is_dark ? -20 : 10), 255);
+             int clr = All_Textures[(int) (text_y) * 32  + (text_x) + (1024)];
+             SDL_SetRenderDrawColor(state.doom_renderer, 40, 30,  (clr == 1 ? 200 :  70) + (is_dark ? -20 : 30), 255);
              SDL_RenderDrawRect(state.doom_renderer, &line_rect); SDL_RenderFillRect(state.doom_renderer, &line_rect);
             text_y += tex_step;
         }
+        //floors
+        
+        
         ra +=  DR; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
     }
 }
