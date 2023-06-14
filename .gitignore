@@ -5,4 +5,7 @@
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
+*.xcworkspace
+!default.xcworkspace
+
 xcuserdata/
