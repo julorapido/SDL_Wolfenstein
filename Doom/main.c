@@ -24,12 +24,15 @@ typedef uint16_t u16;
 const int width = 512;
 const int height = 512;
 const int map_rw = 8;
+// 1 for normal wall
+// 2 for big textured wall
+// 3 for door wall
 const int map[64] = {
     1,1,1,1,1,1,1,1,
     1,1,0,0,0,0,2,1,
     1,0,1,0,0,0,0,1,
     1,0,0,0,0,0,0,1,
-    1,0,1,0,0,0,0,1,
+    1,0,1,0, 0,0,0,1,
     1,0,0,1,0,1,0,1,
     1,0,0,0,0,0,1,1,
     1,1,1,1,1,1,1,1,
@@ -39,10 +42,10 @@ int All_Textures[]= //all 32x32 textures
  //Checkerboard
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,1,1,1,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,1,1,1,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
- 0,0,0,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,0,1,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,1,1,0,0,1,1,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
+ 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,
 
@@ -233,7 +236,7 @@ void renderMap(SDL_Renderer* rendr){
             
             //square conditionnal fill color
             //printf("%d", map_i);
-            if(map[(8 * y )+ x] == 0){SDL_SetRenderDrawColor(rendr, 240, 240, 240, 255);}else{
+            if(map[(map_rw * y )+ x] == 0){SDL_SetRenderDrawColor(rendr, 240, 240, 240, 255);}else{
                 SDL_SetRenderDrawColor(rendr, 0, 0, 0, 255);
             }
             SDL_RenderFillRect(rendr, &map_rect);
@@ -304,7 +307,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         if (ra == 0 || ra == PI || ra == 3.1415926545){rx = state.camera.pos.x; ry = state.camera.pos.y; dof = 8;} // lookgin straight left or right
         while (dof < 8) {
             mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
-            if (mp > 0 && mp < 64 && (map[mp] == 1 || map[mp] == 2) ){dof = 8;// hit wall
+            if (mp > 0 && mp < 64 && (map[mp] > 0) ){dof = 8;// hit wall
                 if( map[mp] == 2){big_H_Wl = true;}
                 h_ray_x = rx; h_ray_y = ry; h_rayLen = raydist(rx, ry, ra);
             }
@@ -335,7 +338,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         while (dof < 8) {
             mx= (int)(rx)>>6; my = (int)(ry)>>6; mp = my * map_rw + mx;
             
-            if (mp > 0 && mp < 64 && (map[mp] == 1 || map[mp] == 2) ){dof = 8;// hit wall
+            if (mp > 0 && mp < 64 && (map[mp] > 0) ){dof = 8;// hit wall
                 if( map[mp] == 2){big_V_Wl = true;}
                 v_ray_x = rx; v_ray_y = ry; v_rayLen = raydist(rx, ry, ra);
             }
@@ -348,7 +351,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         
         // SHADERS
-        bool is_dark = false;
+        bool is_dark = false; bool is_vert = false;
         if (h_rayLen < v_rayLen){rx = h_ray_x; ry =  h_ray_y; disT = h_rayLen;
             main_h_wall = big_H_Wl;
             SDL_SetRenderDrawColor(state.doom_renderer, 200, 30, 100, 255);
@@ -357,6 +360,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         if (v_rayLen < h_rayLen){rx = v_ray_x; ry =  v_ray_y; disT = v_rayLen;
             main_h_wall = big_V_Wl;
+            is_vert = true;
             SDL_SetRenderDrawColor(state.doom_renderer, 230, 30, 100, 255);
             SDL_SetRenderDrawColor(state.renderer, 255, 30, 100, 255);
         }
@@ -374,11 +378,14 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         float prevOff = (height / 2.5) - ( lineH / 2);
         float wallHght = lineH*2 + prevOff - (main_h_wall ? (prevOff - lineH*2) :  prevOff);
         float tex_step = 32.0 / (float) wallHght;
+        float tex_x_step = 32.0 / (float) (rx);
+
         ///
         if(lineH > height - 20){text_yOff = (lineH - (height - 20) ) / 2 ;lineH = height - 20;} // CLIP WALL HEIGHT
         float lineOffst = (height / 2.5) - ( lineH / 2); ////   LINE OFFSET
-        int splitted = width / 60 + 1;
-        float textureHeight =  (lineH*2+lineOffst) / (splitted  + 1);
+    
+        //int splitted = width / 60 + 1;
+        //float textureHeight =  (lineH*2+lineOffst) / (splitted  + 1);
         //printf("%d", map[mp]);
         //for (int p = 0; p < splitted + 1 ; p ++){
             
@@ -395,14 +402,14 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
                 
         //}
         //float wallHght = lineH*2+lineOffst - (main_h_wall ? (lineOffst - lineH*2) :  lineOffst);
-        //printf("%f \n", wallHght);
-        int y; float text_y = text_yOff * tex_step  ;// float tex_step = 32.0 / (float) wallHght;
         
+        int y; float text_y = text_yOff * tex_step  ;// float tex_step = 32.0 / (float) wallHght;
+        int text_x = is_vert ?  (int) ((ry - 64 *  (int)(ry / 64)) / 2) : (int) ((rx - 64 *  (int)(rx / 64)) / 2);
         SDL_Rect line_rect; line_rect.w = 10; line_rect.h = 1; line_rect.x = r + (9 * r);
         for(y = main_h_wall ? lineOffst-lineH*2 :  lineOffst; y <  lineH*2+lineOffst; y ++){
              line_rect.y = y;
-             int clr = All_Textures[(int) (text_y )];
-             SDL_SetRenderDrawColor(state.doom_renderer, clr * 200, 30, 100, 255);
+             int clr = All_Textures[(int) (text_y) * 32  + (text_x)];
+             SDL_SetRenderDrawColor(state.doom_renderer, 40, 30,  (clr == 1 ? 200 :  120) + (is_dark ? -20 : 10), 255);
              SDL_RenderDrawRect(state.doom_renderer, &line_rect); SDL_RenderFillRect(state.doom_renderer, &line_rect);
             text_y += tex_step;
         }
@@ -439,11 +446,11 @@ int main(int argc, const char * argv[]) {
             p_rect.x = width / 2;p_rect.y = width / 2;
             p_rect.w = 10;p_rect.h = 10;
             
-            state.gScreenSurface = SDL_GetWindowSurface(state.doom_window);
-            state.s_mountains = SDL_LoadBMP( "mountains.bmp" );
-            if( state.s_mountains == NULL ){
-                printf( "Unable to load image %s! SDL Error: %s\n", "mountains.bmp", SDL_GetError() );
-            }
+           // state.gScreenSurface = SDL_GetWindowSurface(state.doom_window);
+           // state.s_mountains = SDL_LoadBMP( "mountains.bmp" );
+            //if( state.s_mountains == NULL ){
+              //  printf( "Unable to load image %s! SDL Error: %s\n", "mountains.bmp", SDL_GetError() );
+           // }
 
             // BG Clr
             SDL_SetRenderDrawColor(state.renderer, 100, 100, 100, 255);
