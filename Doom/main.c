@@ -20,6 +20,10 @@ typedef struct vi_s { int x, y; } vi;
 typedef struct v2_s { f32 x, y; } v2;
 typedef uint16_t u16;
 
+float FixAng(float a){ if(a>359){ a-=360;} if(a<0){ a+=360;} return a;}
+float degToRad(float a) { return a*M_PI/180.0;}
+float radToDeg(float a) { return a*180/PI;}
+
 
 const int width = 512;
 const int height = 512;
@@ -372,7 +376,7 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         float ca = state.camera.angle - ra;  if(ca < 0){ca += 2 * PI;} if (ca > 2*PI ){ca -= 2*PI;}
         disT = disT * cosf(ca);
     
-        float lineH = (map_rw * 3 * height) / disT;     /// LINE HEIGHT
+        float lineH = (map_rw * 3.5 * height) / disT;     /// LINE HEIGHT or wall height
         ///
         float text_yOff = 0;
         float prevOff = (height / 2.5) - ( lineH / 2);
@@ -405,21 +409,47 @@ void renderPlayr(SDL_Renderer* rendr, SDL_Rect rect){
         
         int y; float text_y = text_yOff * tex_step  ;// float tex_step = 32.0 / (float) wallHght;
         int text_x = is_vert ?  (int) ((ry - 64 *  (int)(ry / 64)) / 2) : (int) ((rx - 64 *  (int)(rx / 64)) / 2);
+        //printf("%d\n", text_x);
         if(ra > 180){text_x = 31 - text_x;}// flip textures
         //int text_skin = 0;
         //if(map[mp]){text_skin = map[mp] >= 0 && map[mp] <= 4 ? map[mp] : 0;}
-        
+
         SDL_Rect line_rect; line_rect.w = 10; line_rect.h = 1; line_rect.x = r + (9 * r);
         for(y = main_h_wall ? lineOffst-lineH*2 :  lineOffst; y <  lineH*2+lineOffst; y ++){
              line_rect.y = y;
              int clr = All_Textures[(int) (text_y) * 32  + (text_x) + (1024)];
              SDL_SetRenderDrawColor(state.doom_renderer, 40, 30,  (clr == 1 ? 200 :  70) + (is_dark ? -20 : 30), 255);
              SDL_RenderDrawRect(state.doom_renderer, &line_rect); SDL_RenderFillRect(state.doom_renderer, &line_rect);
-            text_y += tex_step;
+             text_y += tex_step;
         }
-        //floors
         
-        
+        //floors ray casting from :
+        //
+        // strght(dist plyr feets to P)     plyr height
+        // ----------------------------- = -----------------------------------------------------
+        //  dist from plyr to wl            #row at mid wall height - #row at Wall botom height
+        //
+        // to :
+        //
+        // strght(dist plyr feets to P) = (plyr height * dist from plyr to wl) / (#row at mid wall height - #row at Wall botom height)
+        //
+        //float P1 = height/2 * (disT) / ( (height/2) -  lineOffst);
+        y = 0;
+        line_rect.h = 1;
+        for(y = lineH*2+lineOffst; y < height; y ++){
+            line_rect.y = y;
+            float r = (lineH*2+lineOffst - 0.8 * y) - (100) * 1.5f;
+            float plyr_hght = 32.0;
+            float strght_line_dist = (plyr_hght * disT )/ r;
+            float beta = fabs(state.camera.angle - ra);
+            float curvd_dist = strght_line_dist / cos(beta);
+            float floor_x = state.camera.pos.x + cos(ra) * curvd_dist; floor_x =  floor_x - (32 * (int) (floor_x/32) );
+            float floor_y = state.camera.pos.y + sin(ra) * curvd_dist; floor_y = floor_y - (32 * (int) (floor_y/32));
+            SDL_RenderDrawRect(state.doom_renderer, &line_rect); SDL_RenderFillRect(state.doom_renderer, &line_rect);
+            int clr = All_Textures[(int) (floor_y) * 32  + (int) (floor_x) ];
+            SDL_SetRenderDrawColor(state.doom_renderer, 40, 30,  (clr == 1 ? 200 :  70), 255);
+        }
+
         ra +=  DR; if(ra < 0){ra += 2 * PI;} if (ra > 2*PI ){ra -= 2*PI;}
     }
 }
